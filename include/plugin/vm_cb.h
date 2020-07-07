@@ -16,10 +16,17 @@
  * The creation of this code was funded by the US Government.
  */
 
+#ifndef __VM_CB_H__
+#define __VM_CB_H__
+
 #include "qemu/osdep.h"
 #include "qemu-common.h"
 #include "qom/cpu.h"
 
+void notify_vm_startup(void);
 void notify_vm_shutdown(void);
 
+bool is_vm_startup_instrumentation_enabled(void);
 bool is_vm_shutdown_instrumentation_enabled(void);
+
+#endif

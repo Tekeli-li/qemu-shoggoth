@@ -8,7 +8,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * Authors:
- *  Adam Critchley <adamc@cromulence.com>
+ *  Adam Critchley <shoggoth@cromulence.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
@@ -18,6 +18,8 @@
 
 #ifndef __INLINES_H__
 #define __INLINES_H__
+
+#include "qemu/error-report.h"
 
 #define fread_checked(dest, s, infile) \
 { \

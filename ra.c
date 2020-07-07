@@ -8,7 +8,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * Authors:
- *  Adam Critchley <adamc@cromulence.com>
+ *  Adam Critchley <shoggoth@cromulence.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
@@ -36,6 +36,7 @@
 #include "qapi/qmp/qpointer.h"
 #include "oshandler/oshandler.h"
 #include "sysemu/sysemu.h"
+#include "sysemu/cpus.h"
 #include "ra.h"
 
 #define RAPID_ANALYSIS_CHANNEL_POOL_INIT   ((uint64_t)400ul * MiB)
@@ -354,6 +355,19 @@ void rapid_analysis_send_tree(CommsRequestRapidSaveTreeMsg *req, CommsQueue *q)
     rcc->unlock_tree(global_rst);
 }
 
+void rapid_analysis_accel_init(QemuOpts *ra_opts, QemuOpts *accel_opts, Error **errp)
+{
+    QemuOpts *accelopts = qemu_opts_create(qemu_find_opts("accel"), NULL, 0, errp);
+    if( !accelopts ){
+        error_report("Error building accel options for Rapid Analysis");
+        exit(1);
+    }
+
+    qemu_opt_set(accelopts, "accel", "tcg", errp);
+    qemu_opt_set(accelopts, "thread", "single", errp);
+    qemu_tcg_configure(accelopts, errp);
+}
+
 void rapid_analysis_drive_init(QemuOpts *ra_opts, MachineState *machine)
 {
     const char *filename;
@@ -375,7 +389,7 @@ void rapid_analysis_drive_init(QemuOpts *ra_opts, MachineState *machine)
     qemu_opt_set(devopts, "format", "qcow2", &err);
     qemu_opt_set(devopts, "snapshot", "on", &err);
     qemu_opt_set(devopts, "file", filename, &err);
-    drive_new(devopts, mc->block_default_type);
+    drive_new(devopts, mc->block_default_type, &err);
     qemu_opts_del(devopts);
 }
 
@@ -424,7 +438,7 @@ void rapid_analysis_init(QemuOpts *ra_opts, MachineState *machine)
         exit(1);
     }
 
-    if(QTAILQ_FIRST(&cpus) != QTAILQ_LAST(&cpus, CPUTailQ)){
+    if(QTAILQ_FIRST(&cpus) != QTAILQ_LAST(&cpus)){
         error_report("Error rapid analysis doesn't support multiple processors... yet...");
         exit(1);
     }
@@ -505,7 +519,7 @@ void rapid_analysis_init(QemuOpts *ra_opts, MachineState *machine)
     global_rst->config_timeout = timeout;
     global_rst->job_timeout = timeout;
 
-    if(execmode && strncmp(execmode, "basic", 4)){
+    if(execmode && strncmp(execmode, "basic", 5)){
         global_rst->enable_interrupts = false;
         global_rst->skip_blocks = true;
         global_rst->skip_save = true;
@@ -601,11 +615,9 @@ void rapid_analysis_init(QemuOpts *ra_opts, MachineState *machine)
     }
 
     // Start the system paused so we can wait for work.
-    vm_prepare_start(RUN_STATE_PAUSED);
-
-    CPU_FOREACH(cpu)
-    {
-        cpu_resume(cpu);
+    // vm_start();
+    if(!vm_prepare_start(RUN_STATE_PAUSED)){
+        resume_all_vcpus();
     }
 }
 
@@ -637,8 +649,37 @@ void rapid_analysis_partial_cleanup(void)
     memory_channel_free_pool();
 }
 
-bool rapid_analysis_handle_syscall(uint64_t number, ...)
+static bool rapid_analysis_handle_sys_read(CPUState *cs, uint32_t fd, ram_addr_t buf, size_t count)
 {
+    RSaveTreeClass *rst_class = RSAVE_TREE_GET_CLASS(global_rst);
+    return rst_class->write_stream_data(global_rst, cs, fd, buf, count);
+}
+
+bool rapid_analysis_handle_syscall(CPUState *cpu , uint64_t number, ...)
+{
+    va_list registers;
+    bool ret;
+
+    va_start(registers, number);
+
+    /* Check if first argument (syscall number register) is read syscall number */
+    uint64_t rax = va_arg(registers, uint64_t);
+    uint64_t rdi = va_arg(registers, uint64_t);
+    uint64_t rsi = va_arg(registers, uint64_t);
+    uint64_t rdx = va_arg(registers, uint64_t);
+
+    /* TODO: make more robust, add SYS_READ macro for diffrent arch's */
+    switch (rax) {
+        case 0:
+            ret = rapid_analysis_handle_sys_read(cpu,
+                        (uint32_t)  rdi,
+                        (ram_addr_t)rsi,
+                        (size_t)    rdx );
+            return ret;
+        default:
+            break;
+    }
+
     return false;
 }
 

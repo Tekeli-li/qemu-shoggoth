@@ -8,7 +8,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * Authors:
- *  Adam Critchley <adamc@cromulence.com>
+ *  Adam Critchley <shoggoth@cromulence.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
@@ -43,6 +43,8 @@ static void osarch_class_init(ObjectClass *klass, void* class_data)
     osarch_class->get_process_string = NULL;
     osarch_class->breakpoint_check = NULL;
     osarch_class->get_active_pagetable = NULL;
+    osarch_class->process_enter = NULL;
+    osarch_class->process_exit = NULL;
 }
 
 OSArch *osarch_init(CPUState *cpu)

@@ -8,7 +8,7 @@
  * Approved for Public Release, Distribution Unlimited
  *
  * Authors:
- *  Adam Critchley <adamc@cromulence.com>
+ *  Adam Critchley <shoggoth@cromulence.com>
  *
  * This work is licensed under the terms of the GNU GPL, version 2 or later.
  * See the COPYING file in the top-level directory.
@@ -52,6 +52,8 @@ typedef struct {
     bool (*is_same_process)(OSArch* ctxt, ProcessInfo *lhs, ProcessInfo *rhs);
     void (*get_process_string)(OSArch* ctxt, ProcessInfo *pi, QString **pqstr);
     uint64_t (*get_active_pagetable)(OSArch* arch, CPUState* cpu);
+    void* (*process_enter)(OSArch* ctxt, ProcessInfo *pi);
+    void  (*process_exit)(OSArch* ctxt, void *state);
 } OSArchClass;
 
 OSArch *osarch_init(CPUState *cpu);
