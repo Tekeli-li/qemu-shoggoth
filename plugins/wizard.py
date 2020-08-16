@@ -24,7 +24,14 @@ import sys
 import argparse
 from mako.template import Template
 
+callback_list = ['ra_start', 'ra_stop', 'ra_idle', 'interrupt',
+                        'memory_read', 'memory_write', 'state_change', 'exception',
+                        'syscall', 'syscall_exit', 'command', 'breakpoint', 'instructions']
+
 def run_wizard(plugins, callbacks):
+
+    if '?' in callbacks:
+        callbacks = callback_list
     workdir = os.path.dirname(os.path.realpath(__file__)) + '/'
 
     for plugin in plugins:
@@ -50,7 +57,6 @@ def run_wizard(plugins, callbacks):
                                 NAME=plugin.upper())
             f.write(code)
 
-
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Creates QEMU plugin directory and skeleton")
     
@@ -61,9 +67,7 @@ if __name__ == '__main__':
     
     parser.add_argument('-cb', '--callbacks', nargs='+', metavar='--callbacks',
                         help="callback function to include in template",
-                        choices=['ra_start', 'ra_stop', 'ra_idle', 'interrupt',
-                        'memory_read', 'memory_write', 'state_change', 'exception',
-                        'syscall', 'syscall_exit', 'command', 'breakpoint', 'instructions'], default=[])
+                        choices=callback_list + ['?'], default=[])
     
     args = parser.parse_args()
     
