@@ -29,7 +29,7 @@ callback_list = ['ra_start', 'ra_stop', 'ra_idle', 'interrupt',
                         'syscall', 'syscall_exit', 'command', 'breakpoint', 'instructions']
 
 templates = {
-            'C' :      {'template' : 'PluginTemplate.c',
+            'c' :      {'template' : 'PluginTemplate.c',
                         'extension' : '.c',
                         'makefile' : 'MakefileTemplate'},
             'python' : {'template' : 'PythonTemplate.py',
@@ -81,7 +81,7 @@ if __name__ == '__main__':
    
     parser.add_argument('-i', '--interface', metavar='--interface',
                         help="sets plugin interface mode, default C",
-                        choices=['C', 'python'])
+                        choices=['C', 'python'], default='C')
 
     parser.add_argument('-cb', '--callbacks', nargs='+', metavar='--callbacks',
                         help="callback function to include in template",
@@ -89,8 +89,7 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     
-    if args.interface == None:
-        args.interface = 'C'
+    args.interface = args.interface.lower()
 
     if args.action == 'create':
         run_wizard(args.plugins, args.interface, args.callbacks)
