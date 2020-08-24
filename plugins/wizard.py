@@ -28,7 +28,16 @@ callback_list = ['ra_start', 'ra_stop', 'ra_idle', 'interrupt',
                         'memory_read', 'memory_write', 'state_change', 'exception',
                         'syscall', 'syscall_exit', 'command', 'breakpoint', 'instructions']
 
-def run_wizard(plugins, callbacks):
+templates = {
+            'c' :      {'template' : 'PluginTemplate.c',
+                        'extension' : '.c',
+                        'makefile' : 'MakefileTemplate'},
+            'python' : {'template' : 'PythonTemplate.py',
+                        'extension' : '.py',
+                        'makefile' : 'PyMakefile'}
+            }
+
+def run_wizard(plugins, interface, callbacks):
 
     if '?' in callbacks:
         callbacks = callback_list
@@ -42,20 +51,25 @@ def run_wizard(plugins, callbacks):
             print("Error: Plugin exist already")
             sys.exit(1)
 
-        srcskeleton  = Template(filename=workdir+'PluginTemplate.c')
-        makeskeleton = Template(filename=workdir+'MakefileTemplate')
+        srcFile = templates[interface]['template']
+        extension = templates[interface]['extension']
+        makeFile = templates[interface]['makefile']
+
+        srcskeleton  = Template(filename=workdir+ srcFile)
+        makeskeleton = Template(filename=workdir+ makeFile)
 
         # write rendered skeleton and Makefile
-        with open(plugdir+plugin+'.c', 'w') as f:
+        with open(plugdir+plugin+ extension, 'w') as f:
             code = srcskeleton.render(name=plugin.lower(), Name=plugin.title(),
                                 NAME=plugin.upper(), callback=callbacks)
 
             f.write(code)
 
-        with open(plugdir+"Makefile", 'w') as f:
+        with open(plugdir+ 'Makefile', 'w') as f:
             code = makeskeleton.render(name=plugin.lower(), Name=plugin.title(),
                                 NAME=plugin.upper())
             f.write(code)
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Creates QEMU plugin directory and skeleton")
@@ -64,13 +78,19 @@ if __name__ == '__main__':
                         choices=['create'])
 
     parser.add_argument("plugins", nargs='+', type=str, metavar="PLUGIN", help="name of plugin")
-    
+   
+    parser.add_argument('-i', '--interface', metavar='--interface',
+                        help="sets plugin interface mode, default C",
+                        choices=['C', 'python'], default='C')
+
     parser.add_argument('-cb', '--callbacks', nargs='+', metavar='--callbacks',
                         help="callback function to include in template",
                         choices=callback_list + ['?'], default=[])
     
     args = parser.parse_args()
     
+    args.interface = args.interface.lower()
+
     if args.action == 'create':
-        run_wizard(args.plugins, args.callbacks)
+        run_wizard(args.plugins, args.interface, args.callbacks)
 

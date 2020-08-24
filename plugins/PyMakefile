@@ -1,0 +1,28 @@
+#/*
+# * Rapid Analysis QEMU System Emulator
+# *
+# * Copyright (c) 2020 Cromulence LLC
+# *
+# * Distribution Statement A
+# *
+# * Approved for Public Release, Distribution Unlimited
+# *
+# * Authors:
+# *  Joseph Walker
+# *
+# * This work is licensed under the terms of the GNU GPL, version 2 or later.
+# * See the COPYING file in the top-level directory.
+# * 
+# * The creation of this code was funded by the US Government.
+# */
+
+${NAME}_TGT=$(PLUGIN_PARENT_DIR)${name}/${name}.pyc
+${NAME}_SRC=$(PLUGIN_PARENT_DIR)${name}/${name}.py
+PLUGIN_TARGETS += $(${NAME}_TGT)
+
+# At the minimum, you need a recipe that matches the directory
+# name. This resides in a folder named ${name} so:
+.PHONY: ${name}
+${name}:
+	@$(PYTHON) -m compileall -b $(${NAME}_SRC)
+	@echo 'A plugin can be found here - $(${NAME}_TGT)'
