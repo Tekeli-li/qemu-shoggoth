@@ -31,13 +31,13 @@ NUMERALS      = "0123456789"
 
 NBINS = 0x8faf2 - 0x7aa
 SINPUT_SIZE = 256
-REPORT_FREQ = 0x1F
+REPORT_FREQ = 0x3F
 
 #Generates a random input
 def rand_input():
     input_length = SINPUT_SIZE
     char_max = 255
-    ret_str = [chr(random.randint(0,char_max)) for i in range(input_length)]
+    ret_str = [chr(random.randint(1,char_max)) for i in range(input_length)]
     joint = "".join(ret_str)
     return joint
 
@@ -46,17 +46,17 @@ def iter_str(iter_str):
     base = iter_str[0]
     #create new empty string
     length = len(iter_str)
-    newStr = [chr(0) for i in range(length)]
-    newStr[0] = chr(ord(base))
-
-    for i in range(length):
-        cur_char = iter_str[i]
-        if cur_char == 0:
-            if i < 255:
-                newStr[i+1] =chr(ord(cur_char) + 1)
-            newStr[i] = 0
+    newStr = [chr(ord(i)) for i in iter_str]
+    newStr[0] = chr(ord(base)+1)
     
-    return "".join(newStr)
+    for i in range(length):
+        if ord(newStr[i]) == 0xFF:
+            if i < 255:
+                newStr[i+1] = chr(ord(newStr[i+1]) +1)
+            newStr[i] = chr(0)
+    
+    ret_str = "".join(newStr)
+    return ret_str
 
 
                 
